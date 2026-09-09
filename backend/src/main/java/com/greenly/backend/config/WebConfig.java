@@ -18,7 +18,9 @@ public class WebConfig {
 						"http://localhost:8081",
 						"http://localhost:19006",
 						"http://127.0.0.1:8081",
-						"http://127.0.0.1:19006"
+						"http://127.0.0.1:19006",
+						"http://192.168.18.181:8081",
+						"http://192.168.18.181:19006"
 					)
 					.allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
 					.allowedHeaders("*")
