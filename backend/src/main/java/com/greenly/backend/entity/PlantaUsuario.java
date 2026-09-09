@@ -24,8 +24,9 @@ public class PlantaUsuario {
 	@JoinColumn(name = "usuario_id", nullable = false)
 	private Usuario usuario;
 
-	@Column(name = "nombre_cientifico", nullable = false, length = 150)
-	private String nombreCientifico;
+	@ManyToOne(fetch = FetchType.EAGER, optional = false)
+	@JoinColumn(name = "especie_id", nullable = false)
+	private EspecieCatalogo especie;
 
 	@Column(name = "nombre_personalizado", length = 100)
 	private String nombrePersonalizado;
@@ -42,9 +43,9 @@ public class PlantaUsuario {
 	protected PlantaUsuario() {
 	}
 
-	public PlantaUsuario(Usuario usuario, String nombreCientifico) {
+	public PlantaUsuario(Usuario usuario, EspecieCatalogo especie) {
 		this.usuario = usuario;
-		this.nombreCientifico = nombreCientifico;
+		this.especie = especie;
 		this.fechaRegistro = LocalDateTime.now();
 	}
 
@@ -56,20 +57,36 @@ public class PlantaUsuario {
 		return usuario;
 	}
 
-	public String getNombreCientifico() {
-		return nombreCientifico;
+	public EspecieCatalogo getEspecie() {
+		return especie;
+	}
+
+	public void setEspecie(EspecieCatalogo especie) {
+		this.especie = especie;
 	}
 
 	public String getNombrePersonalizado() {
 		return nombrePersonalizado;
 	}
 
+	public void setNombrePersonalizado(String nombrePersonalizado) {
+		this.nombrePersonalizado = nombrePersonalizado;
+	}
+
 	public String getUrlFotoUsuario() {
 		return urlFotoUsuario;
 	}
 
+	public void setUrlFotoUsuario(String urlFotoUsuario) {
+		this.urlFotoUsuario = urlFotoUsuario;
+	}
+
 	public LocalDate getFechaAdquisicion() {
 		return fechaAdquisicion;
+	}
+
+	public void setFechaAdquisicion(LocalDate fechaAdquisicion) {
+		this.fechaAdquisicion = fechaAdquisicion;
 	}
 
 	public LocalDateTime getFechaRegistro() {

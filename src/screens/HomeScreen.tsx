@@ -18,6 +18,9 @@ export function HomeScreen({ navigation }: Props) {
         <Pressable onPress={() => navigation.navigate('IdentifyPlant')} style={styles.identifyButton}>
           <Text style={styles.identifyText}>Identificar una planta</Text>
         </Pressable>
+        <Pressable onPress={() => navigation.navigate('Inventory')} style={styles.inventoryButton}>
+          <Text style={styles.inventoryText}>Ver mi inventario</Text>
+        </Pressable>
         <Pressable onPress={() => void logout()} style={styles.logoutButton}>
           <Text style={styles.logoutText}>Cerrar sesión</Text>
         </Pressable>
@@ -35,4 +38,6 @@ const styles = StyleSheet.create({
   logoutText: { color: '#4e8a69', fontWeight: '600' },
   identifyButton: { alignItems: 'center', backgroundColor: '#4e8a69', borderRadius: 4, marginTop: 28, paddingHorizontal: 18, paddingVertical: 13 },
   identifyText: { color: '#ffffff', fontWeight: '600' },
+  inventoryButton: { alignItems: 'center', borderColor: '#4e8a69', borderRadius: 4, borderWidth: 1, marginTop: 12, paddingHorizontal: 18, paddingVertical: 13 },
+  inventoryText: { color: '#4e8a69', fontWeight: '600' },
 });

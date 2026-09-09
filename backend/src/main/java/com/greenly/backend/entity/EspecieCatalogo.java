@@ -35,6 +35,20 @@ public class EspecieCatalogo {
 	protected EspecieCatalogo() {
 	}
 
+	public EspecieCatalogo(
+		String nombreCientifico,
+		String nombreComun,
+		LuzRecomendada luzRecomendada,
+		Integer frecuenciaRiegoBaseDias,
+		String descripcion
+	) {
+		this.nombreCientifico = nombreCientifico;
+		this.nombreComun = nombreComun;
+		this.luzRecomendada = luzRecomendada;
+		this.frecuenciaRiegoBaseDias = frecuenciaRiegoBaseDias;
+		this.descripcion = descripcion;
+	}
+
 	public String getNombreCientifico() {
 		return nombreCientifico;
 	}

@@ -37,6 +37,8 @@ export function IdentifyPlantScreen({ navigation }: Props) {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [result, setResult] = useState<Identification | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const identify = async () => {
     if (!cameraRef.current || !isCameraReady || isIdentifying) return;
@@ -64,6 +66,24 @@ export function IdentifyPlantScreen({ navigation }: Props) {
       setErrorMessage(getApiErrorMessage(error, 'No se pudo identificar la especie. Intenta con mejor iluminación.'));
     } finally {
       setIsIdentifying(false);
+    }
+  };
+
+  const savePlant = async () => {
+    if (!result || isSaving || saved) return;
+
+    setErrorMessage('');
+    setIsSaving(true);
+    try {
+      await api.post('/plantas', {
+        nombreCientifico: result.nombreCientifico,
+        nombreComun: result.nombreComun,
+      });
+      setSaved(true);
+    } catch (error) {
+      setErrorMessage(getApiErrorMessage(error, 'No se pudo guardar la planta en tu inventario.'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -96,6 +116,10 @@ export function IdentifyPlantScreen({ navigation }: Props) {
               <View><Text style={styles.careLabel}>Riego</Text><Text style={styles.careValue}>{result.cuidados.riegoCadaDias ? `Cada ${result.cuidados.riegoCadaDias} días` : 'Pendiente'}</Text></View>
             </View>
           ) : <Text style={styles.pendingCare}>Aún no tenemos cuidados para esta especie en el catálogo.</Text>}
+          {errorMessage ? <Text style={styles.resultError}>{errorMessage}</Text> : null}
+          <Pressable disabled={isSaving || saved} onPress={() => void savePlant()} style={[styles.primaryButton, saved && styles.savedButton]}>
+            {isSaving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.primaryButtonText}>{saved ? 'Guardada en mi inventario' : 'Guardar en mi inventario'}</Text>}
+          </Pressable>
           <Pressable onPress={() => { setResult(null); setPhotoUri(null); }} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Tomar otra foto</Text>
           </Pressable>
@@ -164,4 +188,6 @@ const styles = StyleSheet.create({
   careLabel: { color: '#829188', fontSize: 12 },
   careValue: { color: '#285c43', fontSize: 14, fontWeight: '600', marginTop: 5 },
   pendingCare: { color: '#718178', fontSize: 13, marginTop: 22 },
+  resultError: { color: '#b13e3e', fontSize: 12, marginTop: 14 },
+  savedButton: { backgroundColor: '#2d7655' },
 });
