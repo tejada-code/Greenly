@@ -4,6 +4,8 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '../context/AuthContext';
 import { HomeScreen } from '../screens/HomeScreen';
+import { IdentifyPlantScreen } from '../screens/IdentifyPlantScreen';
+import { InventoryScreen } from '../screens/InventoryScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 
@@ -11,6 +13,8 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Home: undefined;
+  IdentifyPlant: undefined;
+  Inventory: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -30,7 +34,11 @@ export function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen component={HomeScreen} name="Home" />
+          <>
+            <Stack.Screen component={HomeScreen} name="Home" />
+            <Stack.Screen component={IdentifyPlantScreen} name="IdentifyPlant" />
+            <Stack.Screen component={InventoryScreen} name="Inventory" />
+          </>
         ) : (
           <>
             <Stack.Screen component={LoginScreen} name="Login" />
