@@ -4,6 +4,15 @@
     "slug": "Greenly",
     "version": "1.0.0",
     "orientation": "portrait",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Greenly necesita acceso a la cámara para identificar tus plantas.",
+          "microphonePermission": "Greenly necesita acceso al micrófono para grabar videos."
+        }
+      ]
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
