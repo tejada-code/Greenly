@@ -7,6 +7,9 @@ public record PlantRequest(
 	String nombreComun,
 	String nombrePersonalizado,
 	String urlFotoUsuario,
-	LocalDate fechaAdquisicion
+	LocalDate fechaAdquisicion,
+	String luzRecomendada,
+	Integer frecuenciaRiegoBaseDias,
+	String descripcion
 ) {
 }

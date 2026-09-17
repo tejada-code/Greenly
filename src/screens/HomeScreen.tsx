@@ -3,9 +3,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../context/AuthContext';
-import { RootStackParamList } from '../navigation/AppNavigator';
-
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+type Props = {
+  navigation: any;
+};
 
 export function HomeScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
@@ -15,10 +15,10 @@ export function HomeScreen({ navigation }: Props) {
       <View style={styles.content}>
         <Text style={styles.greeting}>Hola, {user?.nombre}</Text>
         <Text style={styles.subtitle}>Tu jardín empieza aquí.</Text>
-        <Pressable onPress={() => navigation.navigate('IdentifyPlant')} style={styles.identifyButton}>
+        <Pressable onPress={() => navigation.navigate('Identificar')} style={styles.identifyButton}>
           <Text style={styles.identifyText}>Identificar una planta</Text>
         </Pressable>
-        <Pressable onPress={() => navigation.navigate('Inventory')} style={styles.inventoryButton}>
+        <Pressable onPress={() => navigation.navigate('Mis plantas')} style={styles.inventoryButton}>
           <Text style={styles.inventoryText}>Ver mi inventario</Text>
         </Pressable>
         <Pressable onPress={() => void logout()} style={styles.logoutButton}>

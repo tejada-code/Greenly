@@ -1,17 +1,40 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 type AuthHeaderProps = {
   active: 'login' | 'register';
   navigation: {
-    navigate: (screen: 'Login' | 'Register') => void;
+    navigate: (screen: any) => void;
+    goBack?: () => void;
+    canGoBack?: () => boolean;
   };
 };
 
 export function AuthHeader({ active, navigation }: AuthHeaderProps) {
+  const handleBack = () => {
+    if (navigation.canGoBack?.()) {
+      navigation.goBack?.();
+    } else {
+      navigation.navigate('Launch');
+    }
+  };
+
   return (
     <>
+      <View style={styles.topRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Volver al inicio"
+          hitSlop={12}
+          onPress={handleBack}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#24734e" />
+        </Pressable>
+      </View>
+
       <View style={styles.brandBlock}>
-        <Text style={styles.brand}>greenly</Text>
+        <Text style={styles.brand}>Greenly</Text>
         <Text style={styles.brandTagline}>cuida lo que te hace bien</Text>
       </View>
       <View style={styles.tabs}>
@@ -29,9 +52,19 @@ export function AuthHeader({ active, navigation }: AuthHeaderProps) {
 }
 
 const styles = StyleSheet.create({
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingVertical: 6,
+  },
+  backButton: {
+    padding: 6,
+    borderRadius: 20,
+  },
   brandBlock: {
     alignItems: 'center',
-    marginTop: 18,
+    marginTop: 4,
     marginBottom: 34,
   },
   brand: {

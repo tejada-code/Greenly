@@ -9,9 +9,11 @@ public record PlantResponse(
 	String nombreComun,
 	String luzRecomendada,
 	Integer frecuenciaRiegoBaseDias,
+	String descripcion,
 	String nombrePersonalizado,
 	String urlFotoUsuario,
 	LocalDate fechaAdquisicion,
-	LocalDateTime fechaRegistro
+	LocalDateTime fechaRegistro,
+	LocalDateTime fechaUltimoRiego
 ) {
 }

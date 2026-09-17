@@ -31,7 +31,7 @@ public class PlantaUsuario {
 	@Column(name = "nombre_personalizado", length = 100)
 	private String nombrePersonalizado;
 
-	@Column(name = "url_foto_usuario", length = 255)
+	@Column(name = "url_foto_usuario", columnDefinition = "TEXT")
 	private String urlFotoUsuario;
 
 	@Column(name = "fecha_adquisicion")
@@ -40,6 +40,9 @@ public class PlantaUsuario {
 	@Column(name = "fecha_registro", nullable = false)
 	private LocalDateTime fechaRegistro;
 
+	@Column(name = "fecha_ultimo_riego")
+	private LocalDateTime fechaUltimoRiego;
+
 	protected PlantaUsuario() {
 	}
 
@@ -47,6 +50,7 @@ public class PlantaUsuario {
 		this.usuario = usuario;
 		this.especie = especie;
 		this.fechaRegistro = LocalDateTime.now();
+		this.fechaUltimoRiego = LocalDateTime.now();
 	}
 
 	public Long getId() {
@@ -91,5 +95,13 @@ public class PlantaUsuario {
 
 	public LocalDateTime getFechaRegistro() {
 		return fechaRegistro;
+	}
+
+	public LocalDateTime getFechaUltimoRiego() {
+		return fechaUltimoRiego;
+	}
+
+	public void setFechaUltimoRiego(LocalDateTime fechaUltimoRiego) {
+		this.fechaUltimoRiego = fechaUltimoRiego;
 	}
 }

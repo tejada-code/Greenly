@@ -69,6 +69,18 @@ public class EspecieCatalogo {
 		return descripcion;
 	}
 
+	public void setLuzRecomendada(LuzRecomendada luzRecomendada) {
+		this.luzRecomendada = luzRecomendada;
+	}
+
+	public void setFrecuenciaRiegoBaseDias(Integer frecuenciaRiegoBaseDias) {
+		this.frecuenciaRiegoBaseDias = frecuenciaRiegoBaseDias;
+	}
+
+	public void setDescripcion(String descripcion) {
+		this.descripcion = descripcion;
+	}
+
 	public enum LuzRecomendada {
 		SOL_DIRECTO,
 		SEMISOMBRA,

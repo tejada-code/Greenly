@@ -107,11 +107,7 @@ public class PlantIdentificationService {
 			));
 		}
 
-		PlantIdentificationResponse.CareData care = catalogo == null ? null : new PlantIdentificationResponse.CareData(
-			catalogo.getLuzRecomendada() == null ? null : catalogo.getLuzRecomendada().name(),
-			catalogo.getFrecuenciaRiegoBaseDias(),
-			catalogo.getDescripcion()
-		);
+		PlantIdentificationResponse.CareData care = resolveCareData(scientificName, commonName, family, catalogo);
 		return new PlantIdentificationResponse(
 			scientificName,
 			commonName,
@@ -120,5 +116,60 @@ public class PlantIdentificationService {
 			care,
 			alternatives
 		);
+	}
+
+	private PlantIdentificationResponse.CareData resolveCareData(
+		String scientificName,
+		String commonName,
+		String family,
+		EspecieCatalogo catalogo
+	) {
+		if (catalogo != null && catalogo.getLuzRecomendada() != null && catalogo.getDescripcion() != null) {
+			return new PlantIdentificationResponse.CareData(
+				catalogo.getLuzRecomendada().name(),
+				catalogo.getFrecuenciaRiegoBaseDias(),
+				catalogo.getDescripcion()
+			);
+		}
+
+		String search = (scientificName + " " + (commonName == null ? "" : commonName) + " " + (family == null ? "" : family)).toLowerCase();
+
+		if (search.contains("dracaena") || search.contains("sansevieria") || search.contains("suegra") || search.contains("snake")) {
+			return new PlantIdentificationResponse.CareData(
+				"SEMISOMBRA",
+				14,
+				"Planta muy resistente y fácil de cuidar. Tolera sequías y purifica el aire."
+			);
+		} else if (search.contains("aloe") || search.contains("succulent") || search.contains("crassula") || search.contains("echeveria") || search.contains("cact")) {
+			return new PlantIdentificationResponse.CareData(
+				"SOL_DIRECTO",
+				14,
+				"Planta crasa muy resistente. Riego espaciado y sustrato con buen drenaje."
+			);
+		} else if (search.contains("monstera") || search.contains("philodendron") || search.contains("epipremnum") || search.contains("pothos")) {
+			return new PlantIdentificationResponse.CareData(
+				"INTERIOR_LUMINOSO",
+				7,
+				"Luz brillante indirecta y humedad moderada. Evitar sol directo abrasador."
+			);
+		} else if (search.contains("ficus") || search.contains("lyrata") || search.contains("elastica")) {
+			return new PlantIdentificationResponse.CareData(
+				"INTERIOR_LUMINOSO",
+				7,
+				"Luz abundante sin sol directo intenso. Riego cuando la capa superior esté seca."
+			);
+		} else if (search.contains("spathiphyllum") || search.contains("calathea") || search.contains("maranta") || search.contains("helecho") || search.contains("fern")) {
+			return new PlantIdentificationResponse.CareData(
+				"SEMISOMBRA",
+				5,
+				"Requiere humedad ambiental y riego moderado evitando encharcamientos."
+			);
+		} else {
+			return new PlantIdentificationResponse.CareData(
+				"INTERIOR_LUMINOSO",
+				7,
+				"Planta resistente y adaptable a interiores luminosos y exteriores protegidos."
+			);
+		}
 	}
 }

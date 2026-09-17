@@ -50,6 +50,11 @@ public class PlantController {
 		return plantService.update(authentication.getName(), id, request);
 	}
 
+	@PutMapping("/{id}/regar")
+	public PlantResponse regar(Authentication authentication, @PathVariable Long id) {
+		return plantService.regar(authentication.getName(), id);
+	}
+
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(Authentication authentication, @PathVariable Long id) {
 		plantService.delete(authentication.getName(), id);
