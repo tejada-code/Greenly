@@ -39,6 +39,15 @@ export type Plant = {
   fechaUltimoRiego: string | null;
 };
 
+export type WateringEvent = {
+  plantaId: number;
+  nombrePlanta: string;
+  tipoEvento: 'REVISION_TIERRA' | 'RIEGO_EFECTIVO';
+  diasRestantes: number;
+  titulo: string;
+  mensaje: string;
+};
+
 const DEFAULT_PLANT_IMAGES: Record<string, string> = {
   'aloe vera': 'https://images.unsplash.com/photo-1596547609652-9cf5d8d76921?w=800&q=80',
   'aloe barbadensis': 'https://images.unsplash.com/photo-1596547609652-9cf5d8d76921?w=800&q=80',
@@ -113,6 +122,7 @@ export function InventoryScreen({ navigation }: Props) {
   const { width: screenWidth } = useWindowDimensions();
   const [plants, setPlants] = useState<Plant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [wateringEvents, setWateringEvents] = useState<WateringEvent[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [wateringId, setWateringId] = useState<number | null>(null);
@@ -126,8 +136,12 @@ export function InventoryScreen({ navigation }: Props) {
   const loadPlants = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await api.get<Plant[]>('/plantas');
-      setPlants(response.data);
+      const [plantsRes, eventsRes] = await Promise.all([
+        api.get<Plant[]>('/plantas'),
+        api.get<WateringEvent[]>('/plantas/eventos-riego').catch(() => ({ data: [] })),
+      ]);
+      setPlants(plantsRes.data);
+      setWateringEvents(eventsRes.data || []);
       setErrorMessage('');
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, 'No se pudo cargar tu inventario.'));
@@ -150,6 +164,7 @@ export function InventoryScreen({ navigation }: Props) {
       setPlants((prev) =>
         prev.map((item) => (item.id === plantId ? { ...item, ...updatedPlant } : item))
       );
+      setWateringEvents((prev) => prev.filter((e) => e.plantaId !== plantId));
       if (selectedPlant && selectedPlant.id === plantId) {
         setSelectedPlant((prev) => (prev ? { ...prev, ...updatedPlant } : null));
       }
@@ -258,6 +273,37 @@ export function InventoryScreen({ navigation }: Props) {
             <Ionicons name="add" size={28} color="#ffffff" />
           </Pressable>
         </View>
+
+        {/* Recordatorios de riego calculados dinámicamente por el motor */}
+        {wateringEvents.length > 0 ? (
+          <View style={styles.reminderBanner}>
+            <View style={styles.reminderHeader}>
+              <Ionicons name="notifications" size={17} color="#c25e00" />
+              <Text style={styles.reminderHeaderTitle}>
+                Recordatorios de hoy ({wateringEvents.length})
+              </Text>
+            </View>
+            {wateringEvents.map((evt, idx) => (
+              <View key={idx} style={styles.reminderItem}>
+                <View style={styles.reminderTextCol}>
+                  <Text style={styles.reminderTitleText}>
+                    {evt.tipoEvento === 'REVISION_TIERRA' ? '🌱' : '💧'} {evt.titulo}
+                  </Text>
+                  <Text style={styles.reminderMessageText}>{evt.mensaje}</Text>
+                </View>
+                {evt.tipoEvento === 'RIEGO_EFECTIVO' ? (
+                  <Pressable
+                    disabled={wateringId === evt.plantaId}
+                    onPress={() => void handleWaterPlant(evt.plantaId)}
+                    style={styles.reminderWaterButton}
+                  >
+                    <Text style={styles.reminderWaterText}>Regar</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         {/* Feedback Alert if watering action just succeeded */}
         {feedbackMessage ? (
@@ -630,6 +676,64 @@ const styles = StyleSheet.create({
   plusButtonPressed: {
     opacity: 0.88,
     transform: [{ scale: 0.96 }],
+  },
+  reminderBanner: {
+    backgroundColor: '#fff8f0',
+    borderColor: '#fed7aa',
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+    marginHorizontal: 24,
+    marginBottom: 14,
+    gap: 10,
+  },
+  reminderHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  reminderHeaderTitle: {
+    color: '#9a3412',
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  reminderItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ffedd5',
+    gap: 8,
+  },
+  reminderTextCol: {
+    flex: 1,
+  },
+  reminderTitleText: {
+    color: '#1c1917',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  reminderMessageText: {
+    color: '#78350f',
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  reminderWaterButton: {
+    backgroundColor: '#ea580c',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  reminderWaterText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
   },
   feedbackBanner: {
     flexDirection: 'row',
