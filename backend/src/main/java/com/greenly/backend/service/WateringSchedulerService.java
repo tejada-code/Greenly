@@ -22,9 +22,14 @@ import com.greenly.backend.repository.PlantaUsuarioRepository;
 public class WateringSchedulerService {
 	private static final Logger logger = LoggerFactory.getLogger(WateringSchedulerService.class);
 	private final PlantaUsuarioRepository plantaUsuarioRepository;
+	private final PushNotificationService pushNotificationService;
 
-	public WateringSchedulerService(PlantaUsuarioRepository plantaUsuarioRepository) {
+	public WateringSchedulerService(
+		PlantaUsuarioRepository plantaUsuarioRepository,
+		PushNotificationService pushNotificationService
+	) {
 		this.plantaUsuarioRepository = plantaUsuarioRepository;
+		this.pushNotificationService = pushNotificationService;
 	}
 
 	/**
@@ -34,24 +39,30 @@ public class WateringSchedulerService {
 	@Scheduled(cron = "${app.watering.cron:0 0 8 * * *}")
 	@Transactional(readOnly = true)
 	public void ejecutarVerificacionProgramada() {
-		LocalDate hoy = LocalDate.now();
-		logger.info("=== [CRON MOTOR DE RIEGOS] Iniciando verificación diaria de riegos para la fecha: {} ===", hoy);
+		ejecutarVerificacionParaFecha(LocalDate.now());
+	}
 
-		List<EventoRiego> eventos = evaluarEventosRiego(hoy);
+	/**
+	 * Ejecuta la verificación para una fecha dada y despacha las notificaciones push.
+	 */
+	@Transactional(readOnly = true)
+	public List<EventoRiego> ejecutarVerificacionParaFecha(LocalDate fechaReferencia) {
+		logger.info("=== [CRON MOTOR DE RIEGOS] Iniciando verificación de riegos para la fecha: {} ===", fechaReferencia);
 
-		logger.info("[CRON MOTOR DE RIEGOS] Verificación finalizada. Se detectaron {} evento(s) de riego a notificar.", eventos.size());
-		for (EventoRiego evento : eventos) {
-			logger.info("🔔 [EVENTO GENERADO] Tipo: {} | Usuario: {} ({}) | Planta: '{}' (ID: {}) | Fecha Riego: {} | Días restantes: {} | Mensaje: '{}'",
-				evento.tipoEvento(),
-				evento.usuarioNombre(),
-				evento.usuarioEmail(),
-				evento.nombrePlanta(),
-				evento.plantaId(),
-				evento.fechaCalculadaRiego(),
-				evento.diasRestantes(),
-				evento.mensaje()
-			);
+		List<PlantaUsuario> plantas = plantaUsuarioRepository.findAllWithUsuarioAndEspecie();
+		List<EventoRiego> eventos = new ArrayList<>();
+
+		for (PlantaUsuario planta : plantas) {
+			EventoRiego evento = evaluarPlanta(planta, fechaReferencia);
+			if (evento != null) {
+				eventos.add(evento);
+				// Despacho de la notificación push personalizada
+				pushNotificationService.sendWateringNotification(planta.getUsuario(), evento);
+			}
 		}
+
+		logger.info("[CRON MOTOR DE RIEGOS] Verificación finalizada. Se detectaron y procesaron {} evento(s) de riego.", eventos.size());
+		return eventos;
 	}
 
 	/**

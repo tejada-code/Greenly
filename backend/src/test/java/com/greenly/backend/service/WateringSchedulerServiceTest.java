@@ -21,9 +21,17 @@ import com.greenly.backend.entity.PlantaUsuario;
 import com.greenly.backend.entity.Usuario;
 import com.greenly.backend.repository.PlantaUsuarioRepository;
 
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+
+import java.util.List;
+
 class WateringSchedulerServiceTest {
 
 	private PlantaUsuarioRepository plantaUsuarioRepository;
+	private PushNotificationService pushNotificationService;
 	private WateringSchedulerService schedulerService;
 	private Usuario usuarioPrueba;
 	private EspecieCatalogo especieSansevieria;
@@ -31,9 +39,10 @@ class WateringSchedulerServiceTest {
 	@BeforeEach
 	void setUp() {
 		plantaUsuarioRepository = mock(PlantaUsuarioRepository.class);
-		schedulerService = new WateringSchedulerService(plantaUsuarioRepository);
+		pushNotificationService = mock(PushNotificationService.class);
+		schedulerService = new WateringSchedulerService(plantaUsuarioRepository, pushNotificationService);
 
-		usuarioPrueba = new Usuario("Maria Lopez", "maria@greenly.com", "password123");
+		usuarioPrueba = new Usuario("maria@greenly.com", "password123", "Maria Lopez");
 		especieSansevieria = new EspecieCatalogo(
 			"Dracaena trifasciata",
 			"Sansevieria",
@@ -117,5 +126,48 @@ class WateringSchedulerServiceTest {
 		EventoRiego evento = schedulerService.evaluarPlanta(planta, hoy);
 
 		assertNull(evento, "No debe generar evento si faltan 13 días para el riego");
+	}
+
+	@Test
+	@DisplayName("Debe disparar el servicio de notificación push cuando se detecta un evento en la verificación")
+	void debeDispararNotificacionPushAlDetectarEvento() {
+		LocalDate hoy = LocalDate.of(2026, 9, 25);
+		LocalDateTime fechaUltimoRiego = hoy.minusDays(14).atTime(9, 0);
+
+		PlantaUsuario planta = new PlantaUsuario(usuarioPrueba, especieSansevieria);
+		planta.setFechaUltimoRiego(fechaUltimoRiego);
+
+		when(plantaUsuarioRepository.findAllWithUsuarioAndEspecie()).thenReturn(List.of(planta));
+
+		List<EventoRiego> eventos = schedulerService.ejecutarVerificacionParaFecha(hoy);
+
+		assertEquals(1, eventos.size());
+		verify(pushNotificationService, times(1)).sendWateringNotification(eq(usuarioPrueba), any(EventoRiego.class));
+	}
+
+	@Test
+	@DisplayName("Debe evaluar múltiples eventos para un usuario detectando simultáneamente RIEGO_EFECTIVO y REVISION_TIERRA")
+	void debeEvaluarMultiplesPlantasParaUsuario() {
+		LocalDate hoy = LocalDate.of(2026, 9, 25);
+
+		// Planta 1: Frecuencia 1 día, regada ayer -> hoy toca regar (RIEGO_EFECTIVO)
+		EspecieCatalogo menta = new EspecieCatalogo("Mentha spicata", "Hierbabuena", EspecieCatalogo.LuzRecomendada.SEMISOMBRA, 1, "Aromática");
+		PlantaUsuario p1 = new PlantaUsuario(usuarioPrueba, menta);
+		p1.setNombrePersonalizado("Hierbabuena Express");
+		p1.setFechaUltimoRiego(hoy.minusDays(1).atTime(8, 0));
+
+		// Planta 2: Frecuencia 5 días, regada hace 3 días -> faltan 2 días (REVISION_TIERRA)
+		EspecieCatalogo sansevieria5dias = new EspecieCatalogo("Dracaena trifasciata", "Sansevieria Test", EspecieCatalogo.LuzRecomendada.INTERIOR_LUMINOSO, 5, "Resistente");
+		PlantaUsuario p2 = new PlantaUsuario(usuarioPrueba, sansevieria5dias);
+		p2.setNombrePersonalizado("Sansevieria Test");
+		p2.setFechaUltimoRiego(hoy.minusDays(3).atTime(9, 0));
+
+		when(plantaUsuarioRepository.findAllWithUsuarioAndEspecie()).thenReturn(List.of(p1, p2));
+
+		List<EventoRiego> eventos = schedulerService.evaluarEventosParaUsuario("maria@greenly.com", hoy);
+
+		assertEquals(2, eventos.size());
+		assertTrue(eventos.stream().anyMatch(e -> e.tipoEvento() == TipoEventoRiego.RIEGO_EFECTIVO));
+		assertTrue(eventos.stream().anyMatch(e -> e.tipoEvento() == TipoEventoRiego.REVISION_TIERRA));
 	}
 }

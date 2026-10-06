@@ -75,6 +75,63 @@ public class PlantService {
 		return toResponse(plantRepository.save(plant));
 	}
 
+	@Transactional
+	public void seedDemoPlants(String email) {
+		Usuario usuario = getUser(email);
+
+		// 1. Especie para RIEGO EFECTIVO inmediato (Frecuencia: 1 día)
+		EspecieCatalogo especieRiego = especieRepository.findByNombreCientificoIgnoreCase("Mentha spicata")
+			.orElseGet(() -> especieRepository.save(new EspecieCatalogo(
+				"Mentha spicata",
+				"Hierbabuena Express",
+				EspecieCatalogo.LuzRecomendada.SEMISOMBRA,
+				1,
+				"Planta aromática fresca que requiere riego frecuente para mantenerse lozana y verde."
+			)));
+		especieRiego.setFrecuenciaRiegoBaseDias(1);
+		especieRepository.save(especieRiego);
+
+		// 2. Especie para REVISIÓN DE TIERRA (Frecuencia: 5 días)
+		EspecieCatalogo especieRevision = especieRepository.findByNombreCientificoIgnoreCase("Dracaena trifasciata")
+			.orElseGet(() -> especieRepository.save(new EspecieCatalogo(
+				"Dracaena trifasciata",
+				"Sansevieria Test",
+				EspecieCatalogo.LuzRecomendada.INTERIOR_LUMINOSO,
+				5,
+				"Planta suculenta muy resistente ideal para interiores y purificación del aire."
+			)));
+		especieRevision.setFrecuenciaRiegoBaseDias(5);
+		especieRepository.save(especieRevision);
+
+		List<PlantaUsuario> plantas = plantRepository.findAllByUsuarioId(usuario.getId());
+
+		// Planta 1: RIEGO EFECTIVO (fechaUltimoRiego hace 1 día, frecuencia 1 día -> HOY toca regar, 0 días restantes)
+		PlantaUsuario p1 = plantas.stream()
+			.filter(p -> "Hierbabuena Express".equalsIgnoreCase(p.getNombrePersonalizado())
+				|| (p.getEspecie() != null && "Mentha spicata".equalsIgnoreCase(p.getEspecie().getNombreCientifico())))
+			.findFirst()
+			.orElseGet(() -> new PlantaUsuario(usuario, especieRiego));
+		p1.setNombrePersonalizado("Hierbabuena Express");
+		p1.setFechaUltimoRiego(LocalDateTime.now().minusDays(1).withHour(8).withMinute(0));
+		if (p1.getUrlFotoUsuario() == null || p1.getUrlFotoUsuario().isBlank()) {
+			p1.setUrlFotoUsuario("https://images.unsplash.com/photo-1628556270448-4d4e4148e1b1?w=800");
+		}
+		plantRepository.save(p1);
+
+		// Planta 2: REVISIÓN DE TIERRA (fechaUltimoRiego hace 3 días, frecuencia 5 días -> proximo riego en 2 días, exactamente 2 días restantes)
+		PlantaUsuario p2 = plantas.stream()
+			.filter(p -> "Sansevieria Test".equalsIgnoreCase(p.getNombrePersonalizado())
+				|| (p.getEspecie() != null && "Dracaena trifasciata".equalsIgnoreCase(p.getEspecie().getNombreCientifico())))
+			.findFirst()
+			.orElseGet(() -> new PlantaUsuario(usuario, especieRevision));
+		p2.setNombrePersonalizado("Sansevieria Test");
+		p2.setFechaUltimoRiego(LocalDateTime.now().minusDays(3).withHour(9).withMinute(0));
+		if (p2.getUrlFotoUsuario() == null || p2.getUrlFotoUsuario().isBlank()) {
+			p2.setUrlFotoUsuario("https://images.unsplash.com/photo-1599598425947-5202edd564c7?w=800");
+		}
+		plantRepository.save(p2);
+	}
+
 	private EspecieCatalogo findOrCreateSpecies(PlantRequest request) {
 		String scientificName = request.nombreCientifico().trim();
 		return especieRepository.findByNombreCientificoIgnoreCase(scientificName).map(species -> {

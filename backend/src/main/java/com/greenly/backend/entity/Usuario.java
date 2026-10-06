@@ -67,6 +67,9 @@ public class Usuario {
 		return nombre;
 	}
 
+	@Column(name = "push_token", length = 255)
+	private String pushToken;
+
 	public LocalDateTime getFechaRegistro() {
 		return fechaRegistro;
 	}
@@ -77,6 +80,14 @@ public class Usuario {
 
 	public List<PlantaUsuario> getPlantas() {
 		return plantas;
+	}
+
+	public String getPushToken() {
+		return pushToken;
+	}
+
+	public void setPushToken(String pushToken) {
+		this.pushToken = pushToken;
 	}
 
 	public enum EstadoCuenta {

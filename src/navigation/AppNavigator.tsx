@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useEffect } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +13,7 @@ import { InventoryScreen } from '../screens/InventoryScreen';
 import { LaunchScreen } from '../screens/LaunchScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
+import { registerForPushNotificationsAsync, setupNotificationListeners } from '../services/notificationService';
 
 export type MainTabParamList = {
   Inicio: undefined;
@@ -101,6 +103,26 @@ export function MainTabNavigator() {
 
 export function AppNavigator() {
   const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      void registerForPushNotificationsAsync();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const unsubscribe = setupNotificationListeners(
+      (notification) => {
+        console.log('🌱 [NOTIFICACIÓN RECIBIDA]:', notification.request.content.title);
+      },
+      (response) => {
+        console.log('📲 [TAP EN NOTIFICACIÓN]:', response.notification.request.content.data);
+      }
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   if (isLoading) {
     return (

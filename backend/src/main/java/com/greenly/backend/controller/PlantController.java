@@ -55,8 +55,14 @@ public class PlantController {
 		LocalDate fecha
 	) {
 		LocalDate fechaRef = fecha != null ? fecha : LocalDate.now();
-		wateringSchedulerService.ejecutarVerificacionProgramada();
-		return wateringSchedulerService.evaluarEventosRiego(fechaRef);
+		return wateringSchedulerService.ejecutarVerificacionParaFecha(fechaRef);
+	}
+
+	@PostMapping("/demo-seed")
+	public List<EventoRiego> seedDemoPlants(Authentication authentication) {
+		String email = authentication != null ? authentication.getName() : "alonsotejada728@gmail.com";
+		plantService.seedDemoPlants(email);
+		return wateringSchedulerService.ejecutarVerificacionParaFecha(LocalDate.now());
 	}
 
 	@PostMapping

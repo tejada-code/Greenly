@@ -11,6 +11,13 @@
           "cameraPermission": "Greenly necesita acceso a la cámara para identificar tus plantas.",
           "microphonePermission": "Greenly necesita acceso al micrófono para grabar videos."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2D6A4F"
+        }
       ]
     ],
     "icon": "./assets/icon.png",

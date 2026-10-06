@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getApiErrorMessage, useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { triggerLocalWateringAlert } from '../services/notificationService';
 
 type Props = {
   navigation: any;
@@ -177,6 +178,57 @@ export function InventoryScreen({ navigation }: Props) {
     }
   };
 
+  const handleTriggerTestNotification = async (event?: WateringEvent) => {
+    try {
+      const title = event
+        ? `${event.tipoEvento === 'REVISION_TIERRA' ? '🌱' : '💧'} ${event.titulo}`
+        : '💧 ¡Día de riego! - Greenly';
+      const body = event
+        ? event.mensaje
+        : 'Hierbabuena Express necesita agua hoy para crecer sana y vigorosa.';
+
+      // Dispara la notificación local inmediata en el móvil (Expo Go)
+      await triggerLocalWateringAlert(title, body, {
+        source: 'greenly-manual-test',
+        plantaId: event?.plantaId,
+      });
+
+      // Llama al backend para registrar la simulación estructurada en consola Spring Boot
+      await api.post('/plantas/verificar-riegos').catch(() => null);
+
+      setFeedbackMessage('¡Notificación lanzada a tu móvil! Revisa la barra superior 📱🔔');
+      setTimeout(() => setFeedbackMessage(''), 4000);
+    } catch {
+      Alert.alert('Alerta', 'No se pudo emitir la notificación local.');
+    }
+  };
+
+  const handleSeedDemoPlants = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.post<WateringEvent[]>('/plantas/demo-seed');
+      await loadPlants();
+      const events = response.data || [];
+      const firstEvent = events[0];
+      const title = firstEvent
+        ? `${firstEvent.tipoEvento === 'REVISION_TIERRA' ? '🌱' : '💧'} ${firstEvent.titulo}`
+        : '💧 ¡Día de riego! - Greenly';
+      const body = firstEvent
+        ? firstEvent.mensaje
+        : 'Hierbabuena Express necesita agua hoy para mantenerse verde.';
+
+      // Emite la notificación local inmediatamente en el móvil
+      await triggerLocalWateringAlert(title, body, { demo: true });
+
+      setFeedbackMessage('¡Plantas de prueba sembradas y recordatorio lanzado al móvil! 📱🌱');
+      setTimeout(() => setFeedbackMessage(''), 4000);
+    } catch (error) {
+      Alert.alert('Error', getApiErrorMessage(error, 'No se pudieron generar las plantas de prueba.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollX = event.nativeEvent.contentOffset.x;
     const index = Math.round(scrollX / FLATLIST_SNAP);
@@ -278,10 +330,21 @@ export function InventoryScreen({ navigation }: Props) {
         {wateringEvents.length > 0 ? (
           <View style={styles.reminderBanner}>
             <View style={styles.reminderHeader}>
-              <Ionicons name="notifications" size={17} color="#c25e00" />
-              <Text style={styles.reminderHeaderTitle}>
-                Recordatorios de hoy ({wateringEvents.length})
-              </Text>
+              <View style={styles.reminderHeaderLeft}>
+                <Ionicons name="notifications" size={17} color="#c25e00" />
+                <Text style={styles.reminderHeaderTitle}>
+                  Recordatorios de hoy ({wateringEvents.length})
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Probar notificación en móvil"
+                onPress={() => void handleTriggerTestNotification(wateringEvents[0])}
+                style={({ pressed }) => [styles.testAlertButton, pressed && styles.testAlertButtonPressed]}
+              >
+                <Ionicons name="paper-plane" size={11} color="#ffffff" />
+                <Text style={styles.testAlertButtonText}>Probar en móvil</Text>
+              </Pressable>
             </View>
             {wateringEvents.map((evt, idx) => (
               <View key={idx} style={styles.reminderItem}>
@@ -303,7 +366,21 @@ export function InventoryScreen({ navigation }: Props) {
               </View>
             ))}
           </View>
-        ) : null}
+        ) : (
+          <View style={styles.demoActionRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Generar plantas de prueba"
+              onPress={() => void handleSeedDemoPlants()}
+              style={({ pressed }) => [styles.demoSeedButton, pressed && styles.demoSeedButtonPressed]}
+            >
+              <Ionicons name="sparkles" size={15} color="#2d6a4f" />
+              <Text style={styles.demoSeedButtonText}>
+                ⚡ Sembrar plantas de prueba & Alerta de riego
+              </Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* Feedback Alert if watering action just succeeded */}
         {feedbackMessage ? (
@@ -690,14 +767,64 @@ const styles = StyleSheet.create({
   reminderHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 6,
+  },
+  reminderHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
   },
   reminderHeaderTitle: {
     color: '#9a3412',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  testAlertButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#c25e00',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 6,
+    gap: 4,
+  },
+  testAlertButtonPressed: {
+    backgroundColor: '#9a3412',
+    opacity: 0.9,
+  },
+  testAlertButtonText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  demoActionRow: {
+    marginHorizontal: 24,
+    marginBottom: 14,
+  },
+  demoSeedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ebf5ef',
+    borderColor: '#cce6d3',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 8,
+  },
+  demoSeedButtonPressed: {
+    backgroundColor: '#d8ecdf',
+    opacity: 0.9,
+  },
+  demoSeedButtonText: {
+    color: '#1e5437',
+    fontSize: 12,
+    fontWeight: '600',
   },
   reminderItem: {
     flexDirection: 'row',
